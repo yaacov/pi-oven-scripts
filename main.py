@@ -28,13 +28,14 @@ from oven import dev
 from oven import db
 
 # Consts.
-oven_interval_sec = 5
+oven_interval_sec = 10
 temp_min_c = 10
 temp_cooling_c = 100
 temp_histeresis_c = 10
 
 app = Flask(__name__)
 state = db.DB()
+
 
 class Config():
     JOBS = [
@@ -46,52 +47,46 @@ class Config():
         }
     ]
 
+
 def run():
     """
     A job periodically running and setting new oven state.
     """
-    
+
+    # Get current state.
     _state = state.get()
 
-    # Get temp.
+    # Get current temp.
     t = dev.oven_get_temp()
 
     # Check for cooling.
     if t > temp_cooling_c:
-        _state["cooling"] = True
+        state.write_key("cooling", True)
     if t < (temp_cooling_c - temp_histeresis_c):
-       _state["cooling"] = False
+        state.write_key("cooling", False)
 
     # Set heating elements.
-    if _state["set_temp"] > temp_min_c:
-        if t > _state["set_temp"]:
+    if t > _state["set_temp"]:
             # Turn heating off
-            _state["top"] = False
-            _state["bottom"] = False
-            _state["back"] = False
-        
-        if t < (_state["set_temp"] - temp_histeresis_c):
-            # Turn heating on
-            _state["top"] = _state["set_top"]
-            _state["bottom"] = _state["set_bottom"]
-            _state["back"] = _state["set_back"]
-    else:
-        # Turn heating off
-        _state["top"] = False
-        _state["bottom"] = False
-        _state["back"] = False
+            state.write_key("top", False)
+            state.write_key("bottom", False)
+            state.write_key("back", False)
 
-    # Set light.
-    _state["light"] = _state["set_light"]
+     if t < (_state["set_temp"] - temp_histeresis_c):
+            # Turn heating on
+            state.write_key("top", _state["set_top"])
+            state.write_key("bottom", _state["set_bottom"])
+            state.write_key("back", _state["set_back"])
 
     # Set back fan, must turn fan on when using back heating.
     if _state["back"]:
-        _state["fan"] = True
+        state.write_key("fan", True)
     else:
-        _state["fan"] = _state["set_fan"]
-    
+        state.write_key("fan", _state["set_fan"])
+
     # Set oven.
-    dev.oven_set(_state)
+    dev.oven_set(state.get())
+
 
 @app.route('/status')
 def status():
@@ -103,6 +98,7 @@ def status():
 
     return jsonify(_state)
 
+
 @app.route('/set')
 def set():
     error = {
@@ -111,13 +107,13 @@ def set():
 
     d = request.args.get('dev')
     value = request.args.get('value')
-    
+
     if d == "temp":
         try:
             v = float(value)
         except:
             v = -1
-        
+
             if value == "high":
                 v = 250
             if value == "low":
@@ -131,9 +127,20 @@ def set():
                 "error": "can't set temp to " + value,
             }
 
-    if d in ["fan", "light", "top", "bottom", "back"]:
-        t = value in ['on', 'On', '1']
-        f = value in ['off', 'Off', '0']
+    if d == "light":
+        t = value in ['on', 'On', '1', 'true', 'True']
+        f = value in ['off', 'Off', '0', 'false', 'False']
+
+        if t:
+            error = {"error": None}
+            state.write_key(field, True)
+        if f:
+            error = {"error": None}
+            state.write_key(field, False)
+
+    if d in ["fan", "top", "bottom", "back"]:
+        t = value in ['on', 'On', '1', 'true', 'True']
+        f = value in ['off', 'Off', '0', 'false', 'False']
         field = "set_" + d
 
         if t:
@@ -146,6 +153,10 @@ def set():
     if error["error"] != None:
         return jsonify(error)
 
+    # Update device.
+    run()
+
+    # Return new state to user.
     _state = state.get()
 
     # Get temp.
@@ -153,6 +164,7 @@ def set():
     _state["temp"] = t
 
     return jsonify(_state)
+
 
 CORS(app)
 

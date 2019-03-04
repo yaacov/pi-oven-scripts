@@ -21,10 +21,12 @@ Persistant value store for oven.
 import json
 import logging
 
+
 class DB():
     """
     Persist oven state.
     """
+
     def __init__(self):
         state = {
             "cooling": False,
@@ -36,10 +38,7 @@ class DB():
             "back": False,
 
             "set_temp": 0,
-
             "set_fan": False,
-            "set_light": False,
-
             "set_top": False,
             "set_bottom": False,
             "set_back": False,
@@ -71,7 +70,9 @@ class DB():
         """
         Write one key if valid and changed.
         """
-        if key not in ["set_temp", "set_fan", "set_light", "set_top", "set_bottom", "set_back"]:
+        if key not in ["cooling", "fan", "light", "top", "bottom", "back", "set_temp", "set_fan", "set_top", "set_bottom", "set_back"]:
+            logging.warning("can't set unknown key %s", key)
+
             return
 
         state = self.get()

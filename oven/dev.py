@@ -22,6 +22,7 @@ try:
     import board
     import digitalio
     import busio
+    import logging
     from adafruit_bus_device.spi_device import SPIDevice
 
     FAN = digitalio.DigitalInOut(board.D2)
@@ -51,6 +52,7 @@ try:
 except NotImplementedError:
     BOARD = "PC"
 
+
 def oven_set(state):
     """
     Set oven state.
@@ -58,21 +60,22 @@ def oven_set(state):
     if BOARD == "PC":
         return
 
-    LIGHT.value = not state["light"]
+    # Relays are normally open:
+    #   Flase => ON
+    #   True  => OFF
     COOLING.value = not state["cooling"]
     FAN.value = not state["fan"]
+    LIGHT.value = not state["light"]
 
     TOP.value = not state["top"]
     BOTTOM.value = not state["bottom"]
     BACK.value = not state["back"]
 
-def oven_get_temp():
-    """
-    Get oven temp.
-    """
-    if BOARD == "PC":
-        return 20
 
+def _oven_get_temp():
+    """
+    Get oven temp, once.
+    """
     data = bytearray(2)
     with SPICDVICE as dev:
         dev.readinto(data)
@@ -80,6 +83,21 @@ def oven_get_temp():
     word = (data[0] << 8) | data[1]
     temp = (word >> 3) / 4.0
 
-    print("temp:", temp)
+    return temp
+
+
+def oven_get_temp():
+    """
+    Get oven temp.
+    """
+    _temp = 0
+    times = 2
+
+    for i in range(times):
+        _temp = _temp + _oven_get_temp()
+        time.sleep(0.5)
+
+    temp = _temp / times
+    logging.warning("temp:", temp)
 
     return temp
