@@ -66,16 +66,16 @@ def run():
 
     # Set heating elements.
     if t > _state["set_temp"]:
-            # Turn heating off
-            state.write_key("top", False)
-            state.write_key("bottom", False)
-            state.write_key("back", False)
+        # Turn heating off
+        state.write_key("top", False)
+        state.write_key("bottom", False)
+        state.write_key("back", False)
 
     if t < (_state["set_temp"] - temp_histeresis_c):
-            # Turn heating on
-            state.write_key("top", _state["set_top"])
-            state.write_key("bottom", _state["set_bottom"])
-            state.write_key("back", _state["set_back"])
+        # Turn heating on
+        state.write_key("top", _state["set_top"])
+        state.write_key("bottom", _state["set_bottom"])
+        state.write_key("back", _state["set_back"])
 
     # Set back fan, must turn fan on when using back heating.
     if _state["back"]:
@@ -151,9 +151,6 @@ def set():
 
     if error["error"] != None:
         return jsonify(error)
-
-    # Update device.
-    run()
 
     # Return new state to user.
     _state = state.get()

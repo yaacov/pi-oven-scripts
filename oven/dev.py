@@ -84,6 +84,9 @@ def oven_get_temp():
     """
     Get oven temp, once.
     """
+    if BOARD == "PC":
+        return 20
+
     data = bytearray(2)
     with SPICDVICE as dev:
         dev.readinto(data)
