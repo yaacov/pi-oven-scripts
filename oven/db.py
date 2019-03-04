@@ -71,13 +71,13 @@ class DB():
         Write one key if valid and changed.
         """
         if key not in ["cooling", "fan", "light", "top", "bottom", "back", "set_temp", "set_fan", "set_top", "set_bottom", "set_back"]:
-            logging.warning("can't set unknown key %s", key)
+            logging.info("can't set unknown key %s", key)
 
             return
 
         state = self.get()
         if state[key] != value:
-            logging.warning('%s set to %s', key, value)
+            logging.info('%s set to %s', key, value)
 
             state[key] = value
             self.write(state)

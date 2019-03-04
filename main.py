@@ -28,10 +28,9 @@ from oven import dev
 from oven import db
 
 # Consts.
-oven_interval_sec = 10
-temp_min_c = 10
+oven_interval_sec = 1
 temp_cooling_c = 100
-temp_histeresis_c = 10
+temp_histeresis_c = 2
 
 app = Flask(__name__)
 state = db.DB()
@@ -72,7 +71,7 @@ def run():
             state.write_key("bottom", False)
             state.write_key("back", False)
 
-     if t < (_state["set_temp"] - temp_histeresis_c):
+    if t < (_state["set_temp"] - temp_histeresis_c):
             # Turn heating on
             state.write_key("top", _state["set_top"])
             state.write_key("bottom", _state["set_bottom"])
@@ -133,10 +132,10 @@ def set():
 
         if t:
             error = {"error": None}
-            state.write_key(field, True)
+            state.write_key("light", True)
         if f:
             error = {"error": None}
-            state.write_key(field, False)
+            state.write_key("light", False)
 
     if d in ["fan", "top", "bottom", "back"]:
         t = value in ['on', 'On', '1', 'true', 'True']

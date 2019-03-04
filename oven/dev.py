@@ -20,28 +20,36 @@ Oven device methods.
 
 try:
     import board
-    import digitalio
     import busio
+    import digitalio
     import logging
+    import time
+
     from adafruit_bus_device.spi_device import SPIDevice
 
     FAN = digitalio.DigitalInOut(board.D2)
     FAN.direction = digitalio.Direction.OUTPUT
+    FAN.value = True
 
     COOLING = digitalio.DigitalInOut(board.D3)
     COOLING.direction = digitalio.Direction.OUTPUT
+    COOLING.value = True
 
     LIGHT = digitalio.DigitalInOut(board.D4)
     LIGHT.direction = digitalio.Direction.OUTPUT
+    LIGHT.value = True
 
     TOP = digitalio.DigitalInOut(board.D17)
     TOP.direction = digitalio.Direction.OUTPUT
+    TOP.value = True
 
     BACK = digitalio.DigitalInOut(board.D27)
     BACK.direction = digitalio.Direction.OUTPUT
+    BACK.value = True
 
     BOTTOM = digitalio.DigitalInOut(board.D22)
     BOTTOM.direction = digitalio.Direction.OUTPUT
+    BOTTOM.value = True
 
     SPI = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
     CS = digitalio.DigitalInOut(board.D5)
@@ -72,7 +80,7 @@ def oven_set(state):
     BACK.value = not state["back"]
 
 
-def _oven_get_temp():
+def oven_get_temp():
     """
     Get oven temp, once.
     """
@@ -81,23 +89,8 @@ def _oven_get_temp():
         dev.readinto(data)
 
     word = (data[0] << 8) | data[1]
-    temp = (word >> 3) / 4.0
+    temp = int((word >> 3) / 4.0)
 
-    return temp
-
-
-def oven_get_temp():
-    """
-    Get oven temp.
-    """
-    _temp = 0
-    times = 2
-
-    for i in range(times):
-        _temp = _temp + _oven_get_temp()
-        time.sleep(0.5)
-
-    temp = _temp / times
-    logging.warning("temp:", temp)
+    logging.info("temp: %d", temp)
 
     return temp
