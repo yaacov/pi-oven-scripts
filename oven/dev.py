@@ -22,6 +22,7 @@ try:
     import board
     import busio
     import digitalio
+    import json
     import logging
     import time
 
@@ -80,12 +81,12 @@ def oven_set(state):
     BACK.value = not state["back"]
 
 
-def oven_get_temp():
+def oven_get():
     """
-    Get oven temp, once.
+    Get oven state.
     """
     if BOARD == "PC":
-        return 20
+        return {"temp": 20}
 
     data = bytearray(2)
     with SPICDVICE as dev:
@@ -94,6 +95,17 @@ def oven_get_temp():
     word = (data[0] << 8) | data[1]
     temp = int((word >> 3) / 4.0)
 
-    logging.info("temp: %d", temp)
+    state = {
+        "temp": temp,
+        "cooling": not COOLING.value,
+        "fan": not FAN.value,
+        "light": not LIGHT.value,
 
-    return temp
+        "top": not TOP.value,
+        "bottom": not BOTTOM.value,
+        "back": not BACK.value,
+    }
+
+    # Return state.
+    logging.info("state: %s", json.dumps(state))
+    return state
