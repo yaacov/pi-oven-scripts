@@ -97,9 +97,7 @@ def status():
 
 @app.route('/set')
 def set():
-    error = {
-        "error": "can't parse request",
-    }
+    error = None
 
     d = request.args.get('dev')
     value = request.args.get('value')
@@ -111,26 +109,32 @@ def set():
             v = -1
 
         if v >= 0 and v < 500:
-            error = {"error": None}
             state.write_key("set_temp", int(v))
         else:
             error = {
                 "error": "can't set temp to " + value,
             }
 
-    if d in ["light", "fan", "top", "bottom", "back"]:
-        t = value in ['on', 'On', '1', 'true', 'True']
-        f = value in ['off', 'Off', '0', 'false', 'False']
+    elif d in ["light", "fan", "top", "bottom", "back"]:
+        t = value in ['on', 'On', '1', 'true', 'True', 't', 'T']
+        f = value in ['off', 'Off', '0', 'false', 'False', 'f', 'F']
         field = "set_" + d
 
         if t:
-            error = {"error": None}
             state.write_key(field, True)
-        if f:
-            error = {"error": None}
+        elif f:
             state.write_key(field, False)
+        else:
+            error = {
+                "error": "can't set " + d + " to " + value,
+            }
+    else:
+        error = {
+            "error": "can't parse request",
+        }
 
-    if error["error"] != None:
+    # Check for errors.
+    if error != None:
         return jsonify(error)
 
     # Get state.
