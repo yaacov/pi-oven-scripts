@@ -43,32 +43,30 @@ class DB():
     @staticmethod
     def _get():
         """
-        Get oven state struct from disk.
+        Get oven state struct from file.
         """
         with open('oven.json') as json_data:
-            data = json.load(json_data)
+            state = json.load(json_data)
 
-            return data
+            return state
 
-        return {"error": "can't readn data"}
+        return {"error": "can't read data from file"}
 
     @classmethod
     def get(cls):
         """
         Get oven state struct.
         """
-        data = cls._get()
+        # Get state from file.
+        state = cls._get()
 
-        if "error" not in data:
-            # Get hardware state.
-            hw_state = dev.oven_get()
+        # Get hardware state.
+        hw_state = dev.oven_get()
 
-            # Merge db data with hardware state.
-            data = {**data, **hw_state}
+        # Merge db data with hardware state.
+        state = {**state, **hw_state}
 
-            return data
-
-        return {"error": "can't read data"}
+        return state
 
     @staticmethod
     def write(state):
@@ -90,11 +88,15 @@ class DB():
             return
 
         state = self._get()
+        if "error" in state:
+            logging.debug("set: can't get current state")
 
-        if "error" not in state and state[key] != value:
+            return
+
+        if state[key] != value:
             logging.info('%s set to %s', key, value)
 
             state[key] = value
             self.write(state)
-        
+
         return state

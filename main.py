@@ -110,7 +110,7 @@ def set():
         except:
             v = -1
 
-        if v >= 0 and v <= 500:
+        if v >= 0 and v < 500:
             error = {"error": None}
             state.write_key("set_temp", int(v))
         else:

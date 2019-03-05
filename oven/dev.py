@@ -95,8 +95,12 @@ def oven_get():
     word = (data[0] << 8) | data[1]
     temp = int((word >> 3) / 4.0)
 
+    # Relays are normally open:
+    #   Flase => ON
+    #   True  => OFF
     state = {
         "temp": temp,
+        
         "cooling": not COOLING.value,
         "fan": not FAN.value,
         "light": not LIGHT.value,
