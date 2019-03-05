@@ -112,7 +112,7 @@ def set():
             state.write_key("set_temp", int(v))
         else:
             error = {
-                "error": "can't set temp to " + value,
+                "error": "can't set temp to " + str(value),
             }
 
     elif d in ["light", "fan", "top", "bottom", "back"]:
@@ -126,7 +126,7 @@ def set():
             state.write_key(field, False)
         else:
             error = {
-                "error": "can't set " + d + " to " + value,
+                "error": "can't set " + d + " to " + str(value),
             }
     else:
         error = {
