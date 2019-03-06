@@ -34,7 +34,7 @@ curl -s "http://oven:5000/status" | jq
 ```
 
 ``` bash
-curl -s "http://oven:5000/set?dev=temp&value=180" | jq
+curl -s "http://oven:5000/set?temp=180" | jq
 ```
 
 ``` json
@@ -56,7 +56,7 @@ curl -s "http://oven:5000/set?dev=temp&value=180" | jq
 ```
 
 ``` bash
-curl -s "http://oven:5000/set?dev=light&value=on" | jq
+curl -s "http://oven:5000/set?light=on" | jq
 ```
 
 ``` json
