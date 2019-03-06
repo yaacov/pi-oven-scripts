@@ -57,6 +57,12 @@ def status():
     return jsonify(dev.get())
 
 
+@app.route('/trend')
+def get_trend():
+    # Get state.
+    return jsonify(dev.get_trend())
+
+
 @app.route('/set')
 def set():
     error = None
@@ -112,4 +118,4 @@ if __name__ == '__main__':
     scheduler.init_app(app)
     scheduler.start()
 
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=5000)

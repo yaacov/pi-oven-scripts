@@ -21,6 +21,7 @@ Oven device methods.
 import json
 import logging
 import time
+from collections import deque
 
 try:
     import board
@@ -39,6 +40,7 @@ except (NotImplementedError, ModuleNotFoundError):
 # Constants.
 temp_cooling_c = 100
 temp_histeresis_c = 4
+temp_trend = deque()
 
 # State variables.
 state = {
@@ -155,6 +157,13 @@ def get():
     return _state
 
 
+def get_trend():
+    """
+    Get temp trend
+    """
+    return list(temp_trend)
+
+
 def write_key(key, value):
     """
     Write one key if valid and changed.
@@ -190,7 +199,7 @@ def get_hw():
     """
     # Get device temperature.
     if BOARD == "PC":
-        temp = 20
+        temp = mock_temp()
 
     if BOARD == "OVEN":
         data = bytearray(2)
@@ -198,13 +207,19 @@ def get_hw():
             device.readinto(data)
 
         word = (data[0] << 8) | data[1]
-        temp = int((word >> 3) / 4.0)
+        temp = (word >> 3) / 4.0
+
+    # Update temp trend.
+    timestamp = int(time.time())
+    temp_trend.append({"time": timestamp, "temp": temp})
+    if len(temp_trend) > 10:
+        temp_trend.popleft()
 
     # Relays are normally open:
     #   False => ON
     #   True  => OFF
     state = {
-        "temp": temp,
+        "temp": int(temp),
 
         "cooling": not dev["cooling"].value,
         "fan": not dev["fan"].value,
@@ -218,3 +233,37 @@ def get_hw():
     # Return state.
     logging.info("state: %s", json.dumps(state))
     return state
+
+
+def mock_temp():
+    """
+    Mock temperature for devices without sensors.
+    """
+    # Some coafisionts.
+    room_temp = 20.0
+    e_to_c = 0.02
+    lose_r = 180.0
+    back_e = 2.0
+    bottom_e = 3.0
+    top_e = 3.0
+
+    # If we do not have enough data, return room temp.
+    if len(temp_trend) != 10:
+        return room_temp
+
+    # Get current de / dt in energy units.
+    e_diff = (temp_trend[9]["temp"] - temp_trend[9]["temp"]) / e_to_c
+
+    # Get lose energy.
+    e_diff = e_diff - (temp_trend[9]["temp"] - room_temp) / e_to_c / lose_r
+
+    # Get input energy.
+    if not dev["top"].value:
+        e_diff = e_diff + top_e
+    if not dev["bottom"].value:
+        e_diff = e_diff + bottom_e
+    if not dev["back"].value:
+        e_diff = e_diff + back_e
+
+    # Return last temp + energy diff in deg c.
+    return temp_trend[9]["temp"] + e_diff * e_to_c
