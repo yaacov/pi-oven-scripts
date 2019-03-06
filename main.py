@@ -25,74 +25,25 @@ from flask_apscheduler import APScheduler
 from flask_cors import CORS
 
 from oven import dev
-from oven import db
-
-# Consts.
-oven_interval_sec = 1
-temp_cooling_c = 100
-temp_histeresis_c = 4
 
 app = Flask(__name__)
-state = db.DB()
 
 
 class Config():
     JOBS = [
         {
             'id': 'oven',
-            'func': 'main:run',
+            'func': 'oven:dev.run',
             'trigger': 'interval',
-            'seconds': oven_interval_sec,
+            'seconds': 1,
         }
     ]
-
-
-def run():
-    """
-    A job periodically running and setting new oven state.
-    """
-
-    # Get current state.
-    _state = state.get()
-
-    temp = _state["temp"]
-
-    # Check for cooling.
-    if temp > temp_cooling_c:
-        _state["cooling"] = True
-    if temp < (temp_cooling_c - temp_histeresis_c):
-        _state["cooling"] = False
-
-    # Set heating elements.
-    if temp > _state["set_temp"]:
-        # Turn heating off
-        _state["top"] = False
-        _state["bottom"] = False
-        _state["back"] = False
-
-    if temp < (_state["set_temp"] - temp_histeresis_c):
-        # Turn heating on
-        _state["top"] = _state["set_top"]
-        _state["bottom"] = _state["set_bottom"]
-        _state["back"] = _state["set_back"]
-
-    # Set back fan, must turn fan on when using back heating.
-    if _state["back"]:
-        _state["fan"] = True
-    else:
-        _state["fan"] = _state["set_fan"]
-
-    # Set light
-    _state["light"] = _state["set_light"]
-
-    # Set oven.
-    dev.oven_set(_state)
 
 
 @app.route('/status')
 def status():
     # Get state.
-    return jsonify(state.get())
+    return jsonify(dev.get())
 
 
 @app.route('/set')
@@ -109,7 +60,7 @@ def set():
             v = -1
 
         if v >= 0 and v < 500:
-            state.write_key("set_temp", int(v))
+            dev.write_key("set_temp", int(v))
         else:
             error = {
                 "error": "can't set temp to " + str(value),
@@ -121,9 +72,9 @@ def set():
         field = "set_" + d
 
         if t:
-            state.write_key(field, True)
+            dev.write_key(field, True)
         elif f:
-            state.write_key(field, False)
+            dev.write_key(field, False)
         else:
             error = {
                 "error": "can't set " + d + " to " + str(value),
@@ -138,7 +89,7 @@ def set():
         return jsonify(error)
 
     # Get state.
-    return jsonify(state.get())
+    return jsonify(dev.get())
 
 
 CORS(app)
