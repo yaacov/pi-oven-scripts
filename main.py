@@ -40,6 +40,17 @@ class Config():
     ]
 
 
+def get_dev(args):
+    """
+    Get the device name from the url query.
+    """
+    for d in ["light", "fan", "top", "bottom", "back", "temp"]:
+        if d in args:
+            return d
+
+    return None
+
+
 @app.route('/status')
 def status():
     # Get state.
@@ -50,8 +61,8 @@ def status():
 def set():
     error = None
 
-    d = request.args.get('dev')
-    value = request.args.get('value')
+    d = get_dev(request.args)
+    value = request.args.get(d)
 
     if d == "temp":
         try:
@@ -85,7 +96,7 @@ def set():
         }
 
     # Check for errors.
-    if error != None:
+    if error:
         return jsonify(error)
 
     # Get state.
