@@ -76,3 +76,26 @@ curl -s "http://oven:5000/set?light=on" | jq
   "top": false
 }
 ```
+
+``` bash
+curl -s http://oven:5000/metrics | sort
+```
+```
+back 0.0
+bottom 0.0
+cooling 0.0
+fan 0.0
+light 0.0
+set_back 0.0
+set_bottom 0.0
+set_fan 0.0
+set_light 0.0
+set_temp 0.0
+set_top 0.0
+temp 25.0
+timer 0.0
+timer_left 0.0
+timer_minutes 0.0
+timer_start 1552054754.0
+top 0.0
+```
