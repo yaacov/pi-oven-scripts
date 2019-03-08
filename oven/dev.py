@@ -50,6 +50,9 @@ state = {
     "set_top": False,
     "set_bottom": False,
     "set_back": False,
+    "timer": False,
+    "timer_start": int(time.time()),
+    "timer_minutes": 0,
 }
 
 # Hardware state and variables.
@@ -128,6 +131,15 @@ def run():
         _state["bottom"] = _state["set_bottom"]
         _state["back"] = _state["set_back"]
 
+    # Check timer.
+    sec_passed = int(time.time()) - _state["timer_start"]
+    timer_left = _state["timer_minutes"] - int(sec_passed / 60.0)
+    if _state["timer"] and timer_left <= 0:
+        # Turn heating off
+        _state["top"] = False
+        _state["bottom"] = False
+        _state["back"] = False
+
     # Set back fan, must turn fan on when using back heating.
     if _state["back"]:
         _state["fan"] = True
@@ -139,6 +151,25 @@ def run():
 
     # Set oven.
     set(_state)
+
+
+def set_timer(minutes):
+    """
+    Set timer to N minutes from now.
+
+    minutes = 0 => set timer to manual.
+    minutes > 0 => set timer to N minutes from now.
+    """
+    if minutes == 0:
+        state["timer"] = False
+
+    # Check for valid minutes value.
+    if minutes >= 0:
+        state["timer"] = True
+        state["timer_minutes"] = minutes
+        state["timer_start"] = int(time.time())
+
+    return
 
 
 def get():
@@ -155,13 +186,6 @@ def get():
     _state = {**_state, **hw_state}
 
     return _state
-
-
-def get_trend():
-    """
-    Get temp trend
-    """
-    return list(temp_trend)
 
 
 def write_key(key, value):
@@ -193,6 +217,13 @@ def set(_state):
     dev["back"].value = not _state["back"]
 
 
+def get_trend():
+    """
+    Get temp trend
+    """
+    return list(temp_trend)
+
+
 def get_hw():
     """
     Get oven hardware state.
@@ -209,6 +240,14 @@ def get_hw():
         word = (data[0] << 8) | data[1]
         temp = (word >> 3) / 4.0
 
+    # Update timer state.
+    timer_left = 0
+    if state["timer"]:
+        sec_passed = int(time.time()) - state["timer_start"]
+        timer_left = state["timer_minutes"] - int(sec_passed / 60.0)
+        if timer_left < 0:
+            timer_left = 0
+
     # Update temp trend.
     timestamp = int(time.time())
     temp_trend.append({"time": timestamp, "temp": temp})
@@ -218,7 +257,7 @@ def get_hw():
     # Relays are normally open:
     #   False => ON
     #   True  => OFF
-    state = {
+    _state = {
         "temp": int(temp),
 
         "cooling": not dev["cooling"].value,
@@ -228,11 +267,13 @@ def get_hw():
         "top": not dev["top"].value,
         "bottom": not dev["bottom"].value,
         "back": not dev["back"].value,
+
+        "timer_left": timer_left,
     }
 
     # Return state.
-    logging.info("state: %s", json.dumps(state))
-    return state
+    logging.info("state: %s", json.dumps(_state))
+    return _state
 
 
 def mock_temp():

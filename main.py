@@ -44,7 +44,7 @@ def get_dev(args):
     """
     Get the device name from the url query.
     """
-    for d in ["light", "fan", "top", "bottom", "back", "temp"]:
+    for d in ["timer", "light", "fan", "top", "bottom", "back", "temp"]:
         if d in args:
             return d
 
@@ -81,6 +81,19 @@ def set():
         else:
             error = {
                 "error": "can't set temp to " + str(value),
+            }
+
+    elif d == "timer":
+        try:
+            v = float(value)
+        except:
+            v = -1
+
+        if v >= 0 and v < 180:
+            dev.set_timer(int(v))
+        else:
+            error = {
+                "error": "can't set timer to " + str(value),
             }
 
     elif d in ["light", "fan", "top", "bottom", "back"]:
