@@ -29,6 +29,17 @@ from oven import dev
 app = Flask(__name__)
 
 
+def metrics(data):
+    """
+    Stringify a data dict into a metrics file format.
+    """
+    out = ""
+    for key, value in data.items():
+        out += str(key) + " " + str(1.0 * value) + "\n"
+
+    return out
+
+
 class Config():
     JOBS = [
         {
@@ -61,6 +72,12 @@ def status():
 def get_trend():
     # Get state.
     return jsonify(dev.get_trend())
+
+
+@app.route('/metrics')
+def get_metrics():
+    # Get state as metrics.
+    return metrics(dev.get())
 
 
 @app.route('/set')
