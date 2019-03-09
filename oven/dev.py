@@ -164,7 +164,7 @@ def set_timer(minutes):
         state["timer"] = False
 
     # Check for valid minutes value.
-    if minutes >= 0:
+    if minutes > 0:
         state["timer"] = True
         state["timer_minutes"] = minutes
         state["timer_start"] = int(time.time())
